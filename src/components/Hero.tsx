@@ -22,8 +22,10 @@ const Hero = ({ onRegisterClick }: HeroProps) => {
             Syahi is a community of writers and readers. Share your poems, stories, and writings with the world, and discover new voices that resonate with you.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <Button onClick={onRegisterClick} size="lg" className="rounded-full px-8">
-              <PenLine className="mr-2 h-5 w-5" /> Start Writing
+            <Button asChild size="lg" className="rounded-full px-8">
+              <Link to="/new-writing">
+                <PenLine className="mr-2 h-5 w-5" /> Start Writing
+              </Link>
             </Button>
             <Button variant="outline" size="lg" className="rounded-full px-8" asChild>
               <Link to="/dashboard">

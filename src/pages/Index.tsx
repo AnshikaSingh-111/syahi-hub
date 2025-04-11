@@ -77,11 +77,11 @@ const Index = () => {
                 It's free to sign up and start sharing your work with the world.
               </p>
               <Button
-                onClick={openRegisterModal}
                 size="lg"
                 className="rounded-full px-8 py-6 text-lg"
+                asChild
               >
-                Create Your Account
+                <Link to="/new-writing">Create Your Account</Link>
               </Button>
             </div>
             <div className="page-curl"></div>
