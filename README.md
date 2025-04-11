@@ -2,7 +2,7 @@
 
 
 ## 🌟 About  
-A creative hub for poetry, verses, and literary scribbles. Built with [Tech Stack] to [Purpose].  
+A creative hub for poetry, verses, and literary scribbles.
 
 
 
