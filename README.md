@@ -1,7 +1,5 @@
 # 📝 Syahi Scribbles - Verse Hub  
 
-![Project Banner](https://via.placeholder.com/1200x400?text=Add+Your+Cool+Banner+Here)  
-*(Replace with an actual screenshot/gif of your project)*  
 
 ## 🌟 About  
 A creative hub for poetry, verses, and literary scribbles. Built with [Tech Stack] to [Purpose].  
