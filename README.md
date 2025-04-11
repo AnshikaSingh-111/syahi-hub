@@ -4,10 +4,7 @@
 ## 🌟 About  
 A creative hub for poetry, verses, and literary scribbles. Built with [Tech Stack] to [Purpose].  
 
-Key Features:  
-- ✨ Feature 1  
-- 🎨 Feature 2  
-- 📱 Feature 3  
+
 
 ## 🚀 Live Demo  
 Experience it here: [https://syahi-scribbles-verse-hub.vercel.app](https://syahi-scribbles-verse-hub.vercel.app)  
