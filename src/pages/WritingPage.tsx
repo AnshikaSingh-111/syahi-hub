@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { Heart, MessageCircle, Share2, Bookmark, Star } from "lucide-react";
+import { toast } from "sonner";
 
-// Mock data - in a real app, this would come from an API
-const mockWriting = {
+// Mock author data
+const mockAuthor = {
+  id: "user1",
+  username: "poetic_soul",
+  profilePic: "",
+  bio: "Writer of poems and lover of words",
+  joinedAt: new Date(2023, 5, 15),
+};
+
+// Default writing data
+const defaultWriting = {
   id: "1",
   title: "Whispers of Dawn",
   content: `The morning light cascades through leaves,
@@ -30,15 +40,9 @@ I find peace in solitude,
 As day breaks with glory divine.`,
   type: "poem",
   authorId: "user1",
-  author: {
-    id: "user1",
-    username: "poetic_soul",
-    profilePic: "",
-    bio: "Writer of poems and lover of words",
-    joinedAt: new Date(2023, 5, 15),
-  },
-  createdAt: new Date(2023, 8, 15),
-  updatedAt: new Date(2023, 8, 15),
+  author: mockAuthor,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
   averageRating: 4.5,
   totalRatings: 12,
   comments: [
@@ -69,21 +73,74 @@ As day breaks with glory divine.`,
 
 const WritingPage = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [writing, setWriting] = useState(defaultWriting);
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const { toast } = useToast();
+  const { toast: useToastNotify } = useToast();
   
-  // In a real app, you would fetch the writing based on the ID
-  const writing = mockWriting;
+  useEffect(() => {
+    // Fetch the writing based on the ID
+    const fetchWriting = () => {
+      // Try to get the writing from localStorage
+      const storedWritings = localStorage.getItem("publishedWritings");
+      if (storedWritings) {
+        const writings = JSON.parse(storedWritings);
+        const foundWriting = writings.find((w: any) => w.id === id);
+        
+        if (foundWriting) {
+          // Add author and handle comments if they don't exist
+          foundWriting.author = foundWriting.author || mockAuthor;
+          foundWriting.comments = foundWriting.comments || [];
+          
+          setWriting(foundWriting);
+          return;
+        }
+      }
+      
+      // If not found in localStorage, use the default writing
+      setWriting({
+        ...defaultWriting,
+        id: id || defaultWriting.id,
+      });
+    };
+    
+    fetchWriting();
+  }, [id]);
   
   const handleRating = (rating: number) => {
     setUserRating(rating);
-    toast({
-      title: "Rating submitted!",
-      description: `You rated this ${writing.type} ${rating} stars.`,
-    });
+    
+    // Update the writing's rating in localStorage
+    const storedWritings = localStorage.getItem("publishedWritings");
+    if (storedWritings) {
+      const writings = JSON.parse(storedWritings);
+      const writingIndex = writings.findIndex((w: any) => w.id === id);
+      
+      if (writingIndex !== -1) {
+        const currentWriting = writings[writingIndex];
+        const newTotalRatings = (currentWriting.totalRatings || 0) + 1;
+        const currentTotalPoints = (currentWriting.averageRating || 0) * (currentWriting.totalRatings || 0);
+        const newAverageRating = (currentTotalPoints + rating) / newTotalRatings;
+        
+        writings[writingIndex] = {
+          ...currentWriting,
+          averageRating: newAverageRating,
+          totalRatings: newTotalRatings,
+        };
+        
+        localStorage.setItem("publishedWritings", JSON.stringify(writings));
+        setWriting((prev) => ({
+          ...prev,
+          averageRating: newAverageRating,
+          totalRatings: newTotalRatings,
+        }));
+      }
+    }
+    
+    toast.success(`You rated this ${writing.type} ${rating} stars.`);
   };
   
   const handleCommentSubmit = () => {
@@ -91,15 +148,46 @@ const WritingPage = () => {
     
     setIsSubmittingComment(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Comment posted!",
-        description: "Your comment has been added to the discussion.",
-      });
-      setComment("");
-      setIsSubmittingComment(false);
-    }, 1000);
+    const newComment = {
+      id: `comment-${Date.now()}`,
+      content: comment,
+      author: {
+        id: "current-user",
+        username: "you",
+        profilePic: "",
+        joinedAt: new Date(),
+      },
+      createdAt: new Date(),
+    };
+    
+    // Update comments in local state
+    setWriting((prev) => ({
+      ...prev,
+      comments: [...(prev.comments || []), newComment],
+      commentsCount: ((prev.comments && prev.comments.length) || 0) + 1,
+    }));
+    
+    // Update comments in localStorage
+    const storedWritings = localStorage.getItem("publishedWritings");
+    if (storedWritings) {
+      const writings = JSON.parse(storedWritings);
+      const writingIndex = writings.findIndex((w: any) => w.id === id);
+      
+      if (writingIndex !== -1) {
+        const updatedComments = [...(writings[writingIndex].comments || []), newComment];
+        writings[writingIndex] = {
+          ...writings[writingIndex],
+          comments: updatedComments,
+          commentsCount: updatedComments.length,
+        };
+        
+        localStorage.setItem("publishedWritings", JSON.stringify(writings));
+      }
+    }
+    
+    toast.success("Your comment has been added to the discussion.");
+    setComment("");
+    setIsSubmittingComment(false);
   };
 
   return (
@@ -116,13 +204,13 @@ const WritingPage = () => {
             
             <div className="flex items-center space-x-4">
               <Avatar>
-                <AvatarImage src={writing.author.profilePic} />
-                <AvatarFallback>{writing.author.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={writing.author?.profilePic} />
+                <AvatarFallback>{writing.author?.username?.slice(0, 2).toUpperCase() || "AU"}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">{writing.author.username}</p>
+                <p className="font-medium">{writing.author?.username || "Anonymous"}</p>
                 <p className="text-sm text-muted-foreground">
-                  Posted on {writing.createdAt.toLocaleDateString()}
+                  Posted on {new Date(writing.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -176,32 +264,38 @@ const WritingPage = () => {
           <Separator className="my-8" />
           
           <div className="mb-8">
-            <h2 className="text-xl font-serif font-bold mb-4">Comments ({writing.comments.length})</h2>
+            <h2 className="text-xl font-serif font-bold mb-4">
+              Comments ({(writing.comments && writing.comments.length) || 0})
+            </h2>
             
             <div className="space-y-6">
-              {writing.comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={comment.author.profilePic} />
-                    <AvatarFallback>
-                      {comment.author.username.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center">
-                      <p className="font-medium">{comment.author.username}</p>
-                      <span className="mx-2 text-muted-foreground">•</span>
-                      <p className="text-sm text-muted-foreground">
-                        {comment.createdAt.toLocaleDateString()}
-                      </p>
+              {writing.comments && writing.comments.length > 0 ? (
+                writing.comments.map((comment: any) => (
+                  <div key={comment.id} className="flex space-x-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={comment.author?.profilePic} />
+                      <AvatarFallback>
+                        {comment.author?.username?.slice(0, 2).toUpperCase() || "AN"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <p className="font-medium">{comment.author?.username || "Anonymous"}</p>
+                        <span className="mx-2 text-muted-foreground">•</span>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <p className="mt-1">{comment.content}</p>
+                      <Button variant="ghost" size="sm" className="mt-1">
+                        Reply
+                      </Button>
                     </div>
-                    <p className="mt-1">{comment.content}</p>
-                    <Button variant="ghost" size="sm" className="mt-1">
-                      Reply
-                    </Button>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
+              )}
             </div>
           </div>
           
@@ -209,7 +303,7 @@ const WritingPage = () => {
             <h2 className="text-xl font-serif font-bold mb-4">Add Your Comment</h2>
             <div className="flex space-x-4">
               <Avatar className="h-10 w-10">
-                <AvatarFallback>GU</AvatarFallback>
+                <AvatarFallback>YO</AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-4">
                 <Textarea

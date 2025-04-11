@@ -50,10 +50,38 @@ const NewWriting = () => {
   const onSubmit = (data: FormValues) => {
     setIsSubmitting(true);
     
-    // This is a mock submission - would be replaced with actual API call
+    // Create a new writing object
+    const newWriting = {
+      id: `writing-${Date.now()}`,
+      title: data.title,
+      content: data.content,
+      type: data.type,
+      excerpt: data.content.slice(0, 150),
+      averageRating: 0,
+      totalRatings: 0,
+      commentsCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    // Get existing writings from localStorage
+    const existingWritings = localStorage.getItem("publishedWritings");
+    const allWritings = existingWritings ? JSON.parse(existingWritings) : [];
+    
+    // Add the new writing to the array
+    allWritings.unshift(newWriting);
+    
+    // Save back to localStorage
+    localStorage.setItem("publishedWritings", JSON.stringify(allWritings));
+    
+    // Dispatch a custom event to notify other components about the new writing
+    window.dispatchEvent(new CustomEvent("writingPublished"));
+    
+    // Show success toast
+    toast.success("Your writing has been published!");
+    
+    // Navigate to the dashboard after a short delay
     setTimeout(() => {
-      console.log("Submitted:", data);
-      toast.success("Your writing has been published!");
       setIsSubmitting(false);
       navigate("/dashboard");
     }, 1000);
@@ -137,7 +165,7 @@ const NewWriting = () => {
                     <Image className="mr-2 h-4 w-4" /> Upload Image
                   </Button>
                   <Button type="submit" disabled={isSubmitting}>
-                    <Send className="mr-2 h-4 w-4" /> Publish
+                    <Send className="mr-2 h-4 w-4" /> {isSubmitting ? "Publishing..." : "Publish"}
                   </Button>
                 </div>
               </form>

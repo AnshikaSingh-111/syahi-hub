@@ -1,38 +1,71 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PenLine, Book, Bookmark, Settings, Star } from "lucide-react";
+import { toast } from "sonner";
 
-// Mock data
-const mockWritings = [
-  {
-    id: "1",
-    title: "Whispers of Dawn",
-    excerpt: "The morning light cascades through leaves, painting shadows on the dewy grass...",
-    type: "poem",
-    averageRating: 4.5,
-    totalRatings: 12,
-    commentsCount: 5,
-    createdAt: new Date(2023, 8, 15)
-  },
-  {
-    id: "2",
-    title: "The Forgotten Path",
-    excerpt: "The cobblestone path stretched before her, weathered by time and the countless souls who had traversed it...",
-    type: "story",
-    averageRating: 4.2,
-    totalRatings: 8,
-    commentsCount: 3,
-    createdAt: new Date(2023, 9, 22)
-  }
-];
+// Mock data storage (will be replaced with a proper backend later)
+const getPublishedWritings = () => {
+  const storedWritings = localStorage.getItem("publishedWritings");
+  return storedWritings ? JSON.parse(storedWritings) : [];
+};
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("my-writings");
+  const [writings, setWritings] = useState(getPublishedWritings());
+  
+  useEffect(() => {
+    // Fetch writings when the component mounts
+    const fetchWritings = () => {
+      const storedWritings = getPublishedWritings();
+      setWritings(storedWritings);
+    };
+    
+    fetchWritings();
+    
+    // Set up event listener for storage changes (in case user publishes from another tab)
+    const handleStorageChange = () => fetchWritings();
+    window.addEventListener("storage", handleStorageChange);
+    
+    // Also set up a custom event listener for when the user publishes a new writing
+    const handlePublish = () => fetchWritings();
+    window.addEventListener("writingPublished", handlePublish);
+    
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("writingPublished", handlePublish);
+    };
+  }, []);
+  
+  // If there are no writings yet, show some mock data
+  const displayWritings = writings.length > 0 ? writings : [
+    {
+      id: "1",
+      title: "Whispers of Dawn",
+      excerpt: "The morning light cascades through leaves, painting shadows on the dewy grass...",
+      content: "The morning light cascades through leaves,\nPainting shadows on the dewy grass.\nBirds awaken with melodies divine,\nNature's symphony at dawn's first pass.",
+      type: "poem",
+      averageRating: 4.5,
+      totalRatings: 12,
+      commentsCount: 5,
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: "2",
+      title: "The Forgotten Path",
+      excerpt: "The cobblestone path stretched before her, weathered by time and the countless souls who had traversed it...",
+      content: "The cobblestone path stretched before her, weathered by time and the countless souls who had traversed it...",
+      type: "story",
+      averageRating: 4.2,
+      totalRatings: 8,
+      commentsCount: 3,
+      createdAt: new Date().toISOString()
+    }
+  ];
   
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">
@@ -71,7 +104,7 @@ const Dashboard = () => {
             
             <TabsContent value="my-writings">
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockWritings.map((writing) => (
+                {displayWritings.map((writing) => (
                   <Link key={writing.id} to={`/writing/${writing.id}`}>
                     <Card className="h-full writing-card hover:shadow-md">
                       <CardHeader className="pb-2">
@@ -81,19 +114,21 @@ const Dashboard = () => {
                           </div>
                           <div className="flex items-center">
                             <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                            <span className="text-sm">{writing.averageRating}</span>
+                            <span className="text-sm">{writing.averageRating || "New"}</span>
                           </div>
                         </div>
                         <CardTitle className="font-serif mt-2">{writing.title}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-muted-foreground line-clamp-3">{writing.excerpt}</p>
+                        <p className="text-muted-foreground line-clamp-3">
+                          {writing.excerpt || writing.content.slice(0, 150) + (writing.content.length > 150 ? "..." : "")}
+                        </p>
                       </CardContent>
                       <CardFooter className="text-xs text-muted-foreground border-t pt-4">
                         <div className="flex justify-between w-full">
-                          <span>{writing.totalRatings} ratings</span>
-                          <span>{writing.commentsCount} comments</span>
-                          <span>{writing.createdAt.toLocaleDateString()}</span>
+                          <span>{writing.totalRatings || 0} ratings</span>
+                          <span>{writing.commentsCount || 0} comments</span>
+                          <span>{new Date(writing.createdAt).toLocaleDateString()}</span>
                         </div>
                       </CardFooter>
                     </Card>
