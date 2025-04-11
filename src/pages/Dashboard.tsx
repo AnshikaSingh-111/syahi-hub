@@ -8,11 +8,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PenLine, Book, Bookmark, Settings, Star } from "lucide-react";
 import { toast } from "sonner";
 
-// Mock data storage (will be replaced with a proper backend later)
-const getPublishedWritings = () => {
+// Function to get all published writings, now used across the app
+export const getPublishedWritings = () => {
   const storedWritings = localStorage.getItem("publishedWritings");
   return storedWritings ? JSON.parse(storedWritings) : [];
 };
+
+// Demo writings for new users who don't have any data yet
+export const getDemoWritings = () => [
+  {
+    id: "1",
+    title: "Whispers of Dawn",
+    excerpt: "The morning light cascades through leaves, painting shadows on the dewy grass...",
+    content: "The morning light cascades through leaves,\nPainting shadows on the dewy grass.\nBirds awaken with melodies divine,\nNature's symphony at dawn's first pass.",
+    type: "poem",
+    averageRating: 4.5,
+    totalRatings: 12,
+    commentsCount: 5,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "2",
+    title: "The Forgotten Path",
+    excerpt: "The cobblestone path stretched before her, weathered by time and the countless souls who had traversed it...",
+    content: "The cobblestone path stretched before her, weathered by time and the countless souls who had traversed it...",
+    type: "story",
+    averageRating: 4.2,
+    totalRatings: 8,
+    commentsCount: 3,
+    createdAt: new Date().toISOString()
+  }
+];
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("my-writings");
@@ -27,11 +53,11 @@ const Dashboard = () => {
     
     fetchWritings();
     
-    // Set up event listener for storage changes (in case user publishes from another tab)
+    // Set up event listener for storage changes
     const handleStorageChange = () => fetchWritings();
     window.addEventListener("storage", handleStorageChange);
     
-    // Also set up a custom event listener for when the user publishes a new writing
+    // Also set up a custom event listener for when a new writing is published
     const handlePublish = () => fetchWritings();
     window.addEventListener("writingPublished", handlePublish);
     
@@ -41,31 +67,8 @@ const Dashboard = () => {
     };
   }, []);
   
-  // If there are no writings yet, show some mock data
-  const displayWritings = writings.length > 0 ? writings : [
-    {
-      id: "1",
-      title: "Whispers of Dawn",
-      excerpt: "The morning light cascades through leaves, painting shadows on the dewy grass...",
-      content: "The morning light cascades through leaves,\nPainting shadows on the dewy grass.\nBirds awaken with melodies divine,\nNature's symphony at dawn's first pass.",
-      type: "poem",
-      averageRating: 4.5,
-      totalRatings: 12,
-      commentsCount: 5,
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: "2",
-      title: "The Forgotten Path",
-      excerpt: "The cobblestone path stretched before her, weathered by time and the countless souls who had traversed it...",
-      content: "The cobblestone path stretched before her, weathered by time and the countless souls who had traversed it...",
-      type: "story",
-      averageRating: 4.2,
-      totalRatings: 8,
-      commentsCount: 3,
-      createdAt: new Date().toISOString()
-    }
-  ];
+  // If there are no writings yet, show demo data
+  const displayWritings = writings.length > 0 ? writings : getDemoWritings();
   
   return (
     <div className="min-h-screen flex flex-col bg-secondary/30">

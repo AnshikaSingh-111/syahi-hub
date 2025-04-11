@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -25,6 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { PenLine, Image, Send } from "lucide-react";
 import { toast } from "sonner";
+import { getPublishedWritings } from "./Dashboard";
 
 const formSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
@@ -50,37 +50,37 @@ const NewWriting = () => {
   const onSubmit = (data: FormValues) => {
     setIsSubmitting(true);
     
-    // Create a new writing object
+    let userId = localStorage.getItem("syahi_user_id");
+    if (!userId) {
+      userId = `user_${Math.random().toString(36).substring(2, 15)}`;
+      localStorage.setItem("syahi_user_id", userId);
+    }
+    
     const newWriting = {
       id: `writing-${Date.now()}`,
       title: data.title,
       content: data.content,
       type: data.type,
-      excerpt: data.content.slice(0, 150),
+      excerpt: data.content.slice(0, 150) + (data.content.length > 150 ? "..." : ""),
       averageRating: 0,
       totalRatings: 0,
       commentsCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      authorId: userId,
+      authorName: "User " + userId.substring(5, 10),
     };
     
-    // Get existing writings from localStorage
-    const existingWritings = localStorage.getItem("publishedWritings");
-    const allWritings = existingWritings ? JSON.parse(existingWritings) : [];
+    const allWritings = getPublishedWritings();
     
-    // Add the new writing to the array
     allWritings.unshift(newWriting);
     
-    // Save back to localStorage
     localStorage.setItem("publishedWritings", JSON.stringify(allWritings));
     
-    // Dispatch a custom event to notify other components about the new writing
     window.dispatchEvent(new CustomEvent("writingPublished"));
     
-    // Show success toast
     toast.success("Your writing has been published!");
     
-    // Navigate to the dashboard after a short delay
     setTimeout(() => {
       setIsSubmitting(false);
       navigate("/dashboard");

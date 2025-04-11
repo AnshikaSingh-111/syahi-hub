@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -10,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { Heart, MessageCircle, Share2, Bookmark, Star } from "lucide-react";
 import { toast } from "sonner";
+import { getPublishedWritings, getDemoWritings } from "./Dashboard";
 
 // Mock author data
 const mockAuthor = {
@@ -82,25 +82,41 @@ const WritingPage = () => {
   const { toast: useToastNotify } = useToast();
   
   useEffect(() => {
-    // Fetch the writing based on the ID
+    // Fetch the writing based on the ID using shared function
     const fetchWriting = () => {
-      // Try to get the writing from localStorage
-      const storedWritings = localStorage.getItem("publishedWritings");
-      if (storedWritings) {
-        const writings = JSON.parse(storedWritings);
-        const foundWriting = writings.find((w: any) => w.id === id);
+      // Get all writings using the shared function
+      const allWritings = getPublishedWritings();
+      const foundWriting = allWritings.find((w: any) => w.id === id);
+      
+      if (foundWriting) {
+        // Add author if it doesn't exist
+        foundWriting.author = foundWriting.author || {
+          id: foundWriting.authorId || "unknown_user",
+          username: foundWriting.authorName || "Anonymous Writer",
+          profilePic: "",
+          joinedAt: new Date(foundWriting.createdAt || Date.now())
+        };
         
-        if (foundWriting) {
-          // Add author and handle comments if they don't exist
-          foundWriting.author = foundWriting.author || mockAuthor;
-          foundWriting.comments = foundWriting.comments || [];
-          
-          setWriting(foundWriting);
-          return;
-        }
+        foundWriting.comments = foundWriting.comments || [];
+        
+        setWriting(foundWriting);
+        return;
       }
       
-      // If not found in localStorage, use the default writing
+      // If not found in localStorage, try demo writings
+      const demoWritings = getDemoWritings();
+      const demofoundWriting = demoWritings.find((w: any) => w.id === id);
+      
+      if (demofoundWriting) {
+        setWriting({
+          ...demofoundWriting,
+          author: mockAuthor,
+          comments: demofoundWriting.comments || []
+        });
+        return;
+      }
+      
+      // If not found anywhere, use default
       setWriting({
         ...defaultWriting,
         id: id || defaultWriting.id,

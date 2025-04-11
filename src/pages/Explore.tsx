@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { Link } from "react-router-dom";
 import { Star, Search, Filter, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getPublishedWritings, getDemoWritings } from "./Dashboard";
 
 const Explore = () => {
   const [writings, setWritings] = useState([]);
@@ -14,51 +14,26 @@ const Explore = () => {
   const [filterType, setFilterType] = useState("all");
 
   useEffect(() => {
-    // Fetch writings from localStorage
-    const storedWritings = localStorage.getItem("publishedWritings");
-    const fetchedWritings = storedWritings ? JSON.parse(storedWritings) : [];
+    const fetchedWritings = getPublishedWritings();
     
-    // If no writings found, provide some sample data
-    const displayWritings = fetchedWritings.length > 0 ? fetchedWritings : [
-      {
-        id: "sample-1",
-        title: "The Silent Echo",
-        excerpt: "Within whispered valleys, memories dance like autumn leaves...",
-        content: "Within whispered valleys, memories dance like autumn leaves,\nCarrying echoes of laughter long since faded.\nTime's gentle current sweeps through empty spaces,\nLeaving nothing but the silent echo of what once was.",
-        type: "poem",
-        averageRating: 4.8,
-        totalRatings: 24,
-        commentsCount: 7,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "sample-2",
-        title: "Journey to Solace",
-        excerpt: "The morning fog wrapped around the small coastal town like a protective blanket...",
-        content: "The morning fog wrapped around the small coastal town like a protective blanket, obscuring the jagged cliffs and whispering secrets to those who dared to listen...",
-        type: "story",
-        averageRating: 4.6,
-        totalRatings: 15,
-        commentsCount: 9,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "sample-3",
-        title: "Urban Whispers",
-        excerpt: "Concrete jungles hiding untold stories beneath the surface of everyday life...",
-        content: "Concrete towers reach for sky,\nShadows dance on busy streets.\nA thousand lives in passing glance,\nUrban whispers never sleep.",
-        type: "poem",
-        averageRating: 4.3,
-        totalRatings: 18,
-        commentsCount: 5,
-        createdAt: new Date().toISOString()
-      }
-    ];
+    const displayWritings = fetchedWritings.length > 0 ? fetchedWritings : getDemoWritings();
     
     setWritings(displayWritings);
+    
+    const handlePublish = () => {
+      const updatedWritings = getPublishedWritings();
+      setWritings(updatedWritings.length > 0 ? updatedWritings : getDemoWritings());
+    };
+    
+    window.addEventListener("writingPublished", handlePublish);
+    window.addEventListener("storage", handlePublish);
+    
+    return () => {
+      window.removeEventListener("writingPublished", handlePublish);
+      window.removeEventListener("storage", handlePublish);
+    };
   }, []);
 
-  // Filter writings based on search query and type
   const filteredWritings = writings.filter(writing => {
     const matchesSearch = writing.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           writing.content.toLowerCase().includes(searchQuery.toLowerCase());
