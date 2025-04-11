@@ -10,7 +10,7 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
   return (
-    <Card className="border-border hover:border-primary/50 transition-all duration-300">
+    <Card className="feature-card border-border hover:border-primary/50 transition-all duration-300 overflow-hidden relative">
       <CardHeader className="pb-2">
         <div className="bg-primary/10 text-primary p-2 rounded-full w-12 h-12 flex items-center justify-center mb-4">
           {icon}
@@ -20,6 +20,7 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
       <CardContent>
         <p className="text-muted-foreground">{description}</p>
       </CardContent>
+      <div className="page-curl"></div>
     </Card>
   );
 };
