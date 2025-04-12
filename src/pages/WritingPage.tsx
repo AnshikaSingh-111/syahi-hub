@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -10,9 +9,9 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { Heart, MessageCircle, Share2, Bookmark, Star } from "lucide-react";
 import { toast } from "sonner";
-import { getPublishedWritings, getDemoWritings } from "./Dashboard";
+import { getWritingById, updateWritingInStorage, getUserId, getUserName } from "@/lib/storage";
+import { getDemoWritings } from "./Dashboard";
 
-// Mock author data
 const mockAuthor = {
   id: "user1",
   username: "poetic_soul",
@@ -21,7 +20,6 @@ const mockAuthor = {
   joinedAt: new Date(2023, 5, 15),
 };
 
-// Default writing data
 const defaultWriting = {
   id: "1",
   title: "Whispers of Dawn",
@@ -83,14 +81,10 @@ const WritingPage = () => {
   const { toast: useToastNotify } = useToast();
   
   useEffect(() => {
-    // Fetch the writing based on the ID using shared function
     const fetchWriting = () => {
-      // Get all writings using the shared function
-      const allWritings = getPublishedWritings();
-      const foundWriting = allWritings.find((w: any) => w.id === id);
+      const foundWriting = id ? getWritingById(id) : null;
       
       if (foundWriting) {
-        // Ensure all required properties exist to prevent TypeScript errors
         const completeWriting = {
           ...foundWriting,
           author: foundWriting.author || {
@@ -108,12 +102,10 @@ const WritingPage = () => {
         return;
       }
       
-      // If not found in localStorage, try demo writings
       const demoWritings = getDemoWritings();
       const demoFoundWriting = demoWritings.find((w: any) => w.id === id);
       
       if (demoFoundWriting) {
-        // Ensure demo writing has all required properties
         setWriting({
           ...demoFoundWriting,
           updatedAt: demoFoundWriting.updatedAt || demoFoundWriting.createdAt,
@@ -124,42 +116,35 @@ const WritingPage = () => {
         return;
       }
       
-      // If not found anywhere, use default with complete properties
       setWriting(defaultWriting);
     };
     
     fetchWriting();
+    
+    const handleWritingUpdate = (event: any) => {
+      if (event.detail && event.detail.id === id) {
+        fetchWriting();
+      }
+    };
+    
+    window.addEventListener("writingUpdated", handleWritingUpdate);
+    
+    return () => {
+      window.removeEventListener("writingUpdated", handleWritingUpdate);
+    };
   }, [id]);
   
   const handleRating = (rating: number) => {
     setUserRating(rating);
     
-    // Update the writing's rating in localStorage
-    const storedWritings = localStorage.getItem("publishedWritings");
-    if (storedWritings) {
-      const writings = JSON.parse(storedWritings);
-      const writingIndex = writings.findIndex((w: any) => w.id === id);
-      
-      if (writingIndex !== -1) {
-        const currentWriting = writings[writingIndex];
-        const newTotalRatings = (currentWriting.totalRatings || 0) + 1;
-        const currentTotalPoints = (currentWriting.averageRating || 0) * (currentWriting.totalRatings || 0);
-        const newAverageRating = (currentTotalPoints + rating) / newTotalRatings;
-        
-        writings[writingIndex] = {
-          ...currentWriting,
-          averageRating: newAverageRating,
-          totalRatings: newTotalRatings,
-        };
-        
-        localStorage.setItem("publishedWritings", JSON.stringify(writings));
-        setWriting((prev) => ({
-          ...prev,
-          averageRating: newAverageRating,
-          totalRatings: newTotalRatings,
-        }));
-      }
-    }
+    const updatedWriting = {
+      ...writing,
+      totalRatings: (writing.totalRatings || 0) + 1,
+      averageRating: ((writing.averageRating || 0) * (writing.totalRatings || 0) + rating) / ((writing.totalRatings || 0) + 1)
+    };
+    
+    updateWritingInStorage(updatedWriting);
+    setWriting(updatedWriting);
     
     toast.success(`You rated this ${writing.type} ${rating} stars.`);
   };
@@ -169,42 +154,31 @@ const WritingPage = () => {
     
     setIsSubmittingComment(true);
     
+    const userId = getUserId();
+    const userName = getUserName(userId);
+    
     const newComment = {
       id: `comment-${Date.now()}`,
       content: comment,
       author: {
-        id: "current-user",
-        username: "you",
+        id: userId,
+        username: userName,
         profilePic: "",
         joinedAt: new Date(),
       },
       createdAt: new Date(),
     };
     
-    // Update comments in local state
-    setWriting((prev) => ({
-      ...prev,
-      comments: [...(prev.comments || []), newComment],
-      commentsCount: ((prev.comments && prev.comments.length) || 0) + 1,
-    }));
+    const updatedComments = [...(writing.comments || []), newComment];
+    const updatedWriting = {
+      ...writing,
+      comments: updatedComments,
+      commentsCount: updatedComments.length,
+    };
     
-    // Update comments in localStorage
-    const storedWritings = localStorage.getItem("publishedWritings");
-    if (storedWritings) {
-      const writings = JSON.parse(storedWritings);
-      const writingIndex = writings.findIndex((w: any) => w.id === id);
-      
-      if (writingIndex !== -1) {
-        const updatedComments = [...(writings[writingIndex].comments || []), newComment];
-        writings[writingIndex] = {
-          ...writings[writingIndex],
-          comments: updatedComments,
-          commentsCount: updatedComments.length,
-        };
-        
-        localStorage.setItem("publishedWritings", JSON.stringify(writings));
-      }
-    }
+    updateWritingInStorage(updatedWriting);
+    
+    setWriting(updatedWriting);
     
     toast.success("Your comment has been added to the discussion.");
     setComment("");

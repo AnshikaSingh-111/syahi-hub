@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -23,9 +22,9 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { PenLine, Image, Send, Sparkles } from "lucide-react";
+import { PenLine, Image, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { getPublishedWritings } from "./Dashboard";
+import { getUserId, getUserName, saveWritingToStorage } from "@/lib/storage";
 
 const formSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
@@ -51,11 +50,8 @@ const NewWriting = () => {
   const onSubmit = (data: FormValues) => {
     setIsSubmitting(true);
     
-    let userId = localStorage.getItem("syahi_user_id");
-    if (!userId) {
-      userId = `user_${Math.random().toString(36).substring(2, 15)}`;
-      localStorage.setItem("syahi_user_id", userId);
-    }
+    const userId = getUserId();
+    const userName = getUserName(userId);
     
     const newWriting = {
       id: `writing-${Date.now()}`,
@@ -66,19 +62,14 @@ const NewWriting = () => {
       averageRating: 0,
       totalRatings: 0,
       commentsCount: 0,
+      comments: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       authorId: userId,
-      authorName: "User " + userId.substring(5, 10),
+      authorName: userName,
     };
     
-    const allWritings = getPublishedWritings();
-    
-    allWritings.unshift(newWriting);
-    
-    localStorage.setItem("publishedWritings", JSON.stringify(allWritings));
-    
-    window.dispatchEvent(new CustomEvent("writingPublished"));
+    saveWritingToStorage(newWriting);
     
     toast.success("Your writing has been published! Everyone can now see it.");
     

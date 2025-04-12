@@ -4,11 +4,12 @@ import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
-import { Star, Search, Filter, BookOpen, Clock, MessageCircle, User } from "lucide-react";
+import { Star, Search, Filter, BookOpen, Clock, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getPublishedWritings, getDemoWritings } from "./Dashboard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
+import { getWritingsFromStorage } from "@/lib/storage";
+import { getDemoWritings } from "./Dashboard";
 
 const Explore = () => {
   const [writings, setWritings] = useState([]);
@@ -19,7 +20,7 @@ const Explore = () => {
   useEffect(() => {
     const fetchWritings = () => {
       setIsLoading(true);
-      const fetchedWritings = getPublishedWritings();
+      const fetchedWritings = getWritingsFromStorage();
       const displayWritings = fetchedWritings.length > 0 ? fetchedWritings : getDemoWritings();
       setWritings(displayWritings);
       setIsLoading(false);
@@ -27,16 +28,19 @@ const Explore = () => {
     
     fetchWritings();
     
+    // Set up event listeners for real-time updates
     const handlePublish = () => {
-      const updatedWritings = getPublishedWritings();
+      const updatedWritings = getWritingsFromStorage();
       setWritings(updatedWritings.length > 0 ? updatedWritings : getDemoWritings());
     };
     
     window.addEventListener("writingPublished", handlePublish);
+    window.addEventListener("writingUpdated", handlePublish);
     window.addEventListener("storage", handlePublish);
     
     return () => {
       window.removeEventListener("writingPublished", handlePublish);
+      window.removeEventListener("writingUpdated", handlePublish);
       window.removeEventListener("storage", handlePublish);
     };
   }, []);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -7,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PenLine, Book, Bookmark, Settings, Star } from "lucide-react";
 import { toast } from "sonner";
+import { getWritingsFromStorage } from "@/lib/storage";
 
 // Function to get all published writings, now used across the app
 export const getPublishedWritings = () => {
@@ -67,23 +67,24 @@ const Dashboard = () => {
   useEffect(() => {
     // Fetch writings when the component mounts
     const fetchWritings = () => {
-      const storedWritings = getPublishedWritings();
+      const storedWritings = getWritingsFromStorage();
       setWritings(storedWritings);
     };
     
     fetchWritings();
     
-    // Set up event listener for storage changes
+    // Set up event listeners for storage changes
     const handleStorageChange = () => fetchWritings();
-    window.addEventListener("storage", handleStorageChange);
-    
-    // Also set up a custom event listener for when a new writing is published
     const handlePublish = () => fetchWritings();
+    
+    window.addEventListener("storage", handleStorageChange);
     window.addEventListener("writingPublished", handlePublish);
+    window.addEventListener("writingUpdated", handlePublish);
     
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("writingPublished", handlePublish);
+      window.removeEventListener("writingUpdated", handlePublish);
     };
   }, []);
   
