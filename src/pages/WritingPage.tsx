@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -89,38 +90,42 @@ const WritingPage = () => {
       const foundWriting = allWritings.find((w: any) => w.id === id);
       
       if (foundWriting) {
-        // Add author if it doesn't exist
-        foundWriting.author = foundWriting.author || {
-          id: foundWriting.authorId || "unknown_user",
-          username: foundWriting.authorName || "Anonymous Writer",
-          profilePic: "",
-          joinedAt: new Date(foundWriting.createdAt || Date.now())
+        // Ensure all required properties exist to prevent TypeScript errors
+        const completeWriting = {
+          ...foundWriting,
+          author: foundWriting.author || {
+            id: foundWriting.authorId || "unknown_user",
+            username: foundWriting.authorName || "Anonymous Writer",
+            profilePic: "",
+            joinedAt: new Date(foundWriting.createdAt || Date.now())
+          },
+          comments: foundWriting.comments || [],
+          updatedAt: foundWriting.updatedAt || foundWriting.createdAt || new Date().toISOString(),
+          authorId: foundWriting.authorId || "anonymous"
         };
         
-        foundWriting.comments = foundWriting.comments || [];
-        
-        setWriting(foundWriting);
+        setWriting(completeWriting);
         return;
       }
       
       // If not found in localStorage, try demo writings
       const demoWritings = getDemoWritings();
-      const demofoundWriting = demoWritings.find((w: any) => w.id === id);
+      const demoFoundWriting = demoWritings.find((w: any) => w.id === id);
       
-      if (demofoundWriting) {
+      if (demoFoundWriting) {
+        // Ensure demo writing has all required properties
         setWriting({
-          ...demofoundWriting,
+          ...demoFoundWriting,
+          updatedAt: demoFoundWriting.updatedAt || demoFoundWriting.createdAt,
+          authorId: demoFoundWriting.authorId || "user1",
           author: mockAuthor,
-          comments: demofoundWriting.comments || []
+          comments: demoFoundWriting.comments || []
         });
         return;
       }
       
-      // If not found anywhere, use default
-      setWriting({
-        ...defaultWriting,
-        id: id || defaultWriting.id,
-      });
+      // If not found anywhere, use default with complete properties
+      setWriting(defaultWriting);
     };
     
     fetchWriting();
@@ -207,54 +212,60 @@ const WritingPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
       <Navbar />
       
-      <main className="flex-grow px-4 py-8 bg-secondary/30">
+      <main className="flex-grow px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <div className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary mb-4">
-              {writing.type}
-            </div>
-            <h1 className="text-3xl font-serif font-bold mb-4">{writing.title}</h1>
-            
-            <div className="flex items-center space-x-4">
-              <Avatar>
-                <AvatarImage src={writing.author?.profilePic} />
-                <AvatarFallback>{writing.author?.username?.slice(0, 2).toUpperCase() || "AU"}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{writing.author?.username || "Anonymous"}</p>
-                <p className="text-sm text-muted-foreground">
-                  Posted on {new Date(writing.createdAt).toLocaleDateString()}
-                </p>
+          <Card className="mb-8 overflow-hidden border-primary/20 shadow-lg">
+            <div className="bg-primary/5 px-6 py-8 border-b">
+              <div className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary mb-4">
+                {writing.type}
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold mb-6">{writing.title}</h1>
+              
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-12 w-12 border-2 border-primary/20">
+                  <AvatarImage src={writing.author?.profilePic} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                    {writing.author?.username?.slice(0, 2).toUpperCase() || "AU"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium text-lg">{writing.author?.username || "Anonymous"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Posted on {new Date(writing.createdAt).toLocaleDateString('en-US', {
+                      month: 'long', 
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <Card className="mb-8">
-            <CardContent className="p-6">
-              <div className="prose-syahi whitespace-pre-line">
+            
+            <CardContent className="p-8">
+              <div className="prose-syahi whitespace-pre-line text-lg leading-relaxed">
                 {writing.content}
               </div>
             </CardContent>
           </Card>
           
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-8 bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-sm">
             <div className="flex items-center space-x-6">
-              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                <Heart className="h-4 w-4 mr-1" /> Like
+              <Button variant="ghost" size="sm" className="flex items-center gap-1 hover:text-primary hover:bg-primary/10">
+                <Heart className="h-5 w-5 mr-1" /> Like
               </Button>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                <Bookmark className="h-4 w-4 mr-1" /> Save
+              <Button variant="ghost" size="sm" className="flex items-center gap-1 hover:text-primary hover:bg-primary/10">
+                <Bookmark className="h-5 w-5 mr-1" /> Save
               </Button>
-              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                <Share2 className="h-4 w-4 mr-1" /> Share
+              <Button variant="ghost" size="sm" className="flex items-center gap-1 hover:text-primary hover:bg-primary/10">
+                <Share2 className="h-5 w-5 mr-1" /> Share
               </Button>
             </div>
             
-            <div className="flex items-center">
-              <div className="mr-2 text-sm font-medium">Rate this {writing.type}:</div>
+            <div className="flex items-center bg-secondary p-2 rounded-md">
+              <div className="mr-2 text-sm font-medium">Rate:</div>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <button
@@ -262,7 +273,7 @@ const WritingPage = () => {
                     onClick={() => handleRating(rating)}
                     onMouseEnter={() => setHoverRating(rating)}
                     onMouseLeave={() => setHoverRating(0)}
-                    className="focus:outline-none"
+                    className="focus:outline-none transition-transform hover:scale-110"
                   >
                     <Star
                       className={`h-5 w-5 ${
@@ -280,72 +291,82 @@ const WritingPage = () => {
           <Separator className="my-8" />
           
           <div className="mb-8">
-            <h2 className="text-xl font-serif font-bold mb-4">
+            <h2 className="text-2xl font-serif font-bold mb-6 flex items-center">
+              <MessageCircle className="mr-2 h-5 w-5 text-primary" />
               Comments ({(writing.comments && writing.comments.length) || 0})
             </h2>
             
             <div className="space-y-6">
               {writing.comments && writing.comments.length > 0 ? (
                 writing.comments.map((comment: any) => (
-                  <div key={comment.id} className="flex space-x-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={comment.author?.profilePic} />
-                      <AvatarFallback>
-                        {comment.author?.username?.slice(0, 2).toUpperCase() || "AN"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center">
-                        <p className="font-medium">{comment.author?.username || "Anonymous"}</p>
-                        <span className="mx-2 text-muted-foreground">•</span>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </p>
+                  <Card key={comment.id} className="overflow-hidden transition-all hover:shadow-md">
+                    <div className="flex p-4">
+                      <Avatar className="h-10 w-10 border border-primary/10">
+                        <AvatarImage src={comment.author?.profilePic} />
+                        <AvatarFallback className="bg-secondary text-primary">
+                          {comment.author?.username?.slice(0, 2).toUpperCase() || "AN"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 ml-4">
+                        <div className="flex items-center">
+                          <p className="font-medium">{comment.author?.username || "Anonymous"}</p>
+                          <span className="mx-2 text-muted-foreground">•</span>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <p className="mt-2">{comment.content}</p>
+                        <Button variant="ghost" size="sm" className="mt-2 text-xs text-primary">
+                          Reply
+                        </Button>
                       </div>
-                      <p className="mt-1">{comment.content}</p>
-                      <Button variant="ghost" size="sm" className="mt-1">
-                        Reply
-                      </Button>
                     </div>
-                  </div>
+                  </Card>
                 ))
               ) : (
-                <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
+                <div className="text-center py-12 bg-secondary/30 rounded-lg">
+                  <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
+                </div>
               )}
             </div>
           </div>
           
-          <div className="mb-8">
-            <h2 className="text-xl font-serif font-bold mb-4">Add Your Comment</h2>
-            <div className="flex space-x-4">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback>YO</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 space-y-4">
-                <Textarea
-                  placeholder="Share your thoughts on this writing..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                />
-                <div className="flex justify-end">
-                  <Button 
-                    disabled={!comment.trim() || isSubmittingComment}
-                    onClick={handleCommentSubmit}
-                    className="flex items-center gap-1"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    {isSubmittingComment ? "Posting..." : "Post Comment"}
-                  </Button>
+          <Card className="mb-8 border-primary/20">
+            <CardContent className="p-6">
+              <h2 className="text-xl font-serif font-bold mb-4">Add Your Comment</h2>
+              <div className="flex space-x-4">
+                <Avatar className="h-10 w-10 border border-primary/20">
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">YOU</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-4">
+                  <Textarea
+                    placeholder="Share your thoughts on this writing..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="border-primary/20 focus:border-primary min-h-[100px]"
+                  />
+                  <div className="flex justify-end">
+                    <Button 
+                      disabled={!comment.trim() || isSubmittingComment}
+                      onClick={handleCommentSubmit}
+                      className="flex items-center gap-2 bg-gradient-to-r from-primary to-primary/80"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {isSubmittingComment ? "Posting..." : "Post Comment"}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
       
-      <footer className="bg-background border-t border-border py-4 px-4">
+      <footer className="bg-background border-t border-border py-6 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-muted-foreground text-sm">© {new Date().getFullYear()} Syahi. All rights reserved.</p>
+          <p className="text-muted-foreground text-xs mt-1">Share your writing journey with the world</p>
         </div>
       </footer>
     </div>
