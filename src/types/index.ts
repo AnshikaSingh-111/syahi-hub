@@ -12,22 +12,30 @@ export interface Writing {
   id: string;
   title: string;
   content: string;
-  type: 'poem' | 'story' | 'other';
+  type: 'poem' | 'story' | 'essay' | 'other';
   authorId: string;
-  author: User;
-  createdAt: Date;
-  updatedAt: Date;
+  author?: User;
+  authorName?: string; // Added for compatibility with local storage implementation
+  createdAt: Date | string;
+  updatedAt: Date | string;
   averageRating: number;
   totalRatings: number;
   comments: Comment[];
+  excerpt?: string;
+  commentsCount?: number;
 }
 
 export interface Comment {
   id: string;
   content: string;
-  authorId: string;
-  author: User;
-  writingId: string;
+  authorId?: string;
+  author: {
+    id: string;
+    username: string;
+    profilePic?: string;
+    joinedAt: Date;
+  };
+  writingId?: string;
   createdAt: Date;
 }
 

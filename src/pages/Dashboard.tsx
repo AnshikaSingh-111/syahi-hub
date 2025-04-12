@@ -25,7 +25,23 @@ export const getDemoWritings = () => [
     averageRating: 4.5,
     totalRatings: 12,
     commentsCount: 5,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    authorId: "user1",
+    authorName: "poetic_soul",
+    comments: [
+      {
+        id: "comment1",
+        content: "This poem beautifully captures the essence of dawn. The imagery is vivid and evocative.",
+        author: {
+          id: "user2",
+          username: "literary_critic",
+          profilePic: "",
+          joinedAt: new Date(2023, 3, 10),
+        },
+        createdAt: new Date(2023, 8, 16),
+      }
+    ]
   },
   {
     id: "2",
@@ -36,7 +52,11 @@ export const getDemoWritings = () => [
     averageRating: 4.2,
     totalRatings: 8,
     commentsCount: 3,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    authorId: "user2",
+    authorName: "story_weaver",
+    comments: []
   }
 ];
 
